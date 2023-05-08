@@ -1,0 +1,9 @@
+
+meta:
+  name: json house
+  version: 0.0.1
+  real_ip: 127.0.0.1
+
+timing:
+  room: 18000  # 5 hours
+  session: 2592000  # 30 days

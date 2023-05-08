@@ -1,0 +1,4 @@
+path: ../logs
+name: json_placeholder.log
+level: DEBUG
+format: "%(asctime)s %(levelname)s [%(request_id)1s] %(message)s"
