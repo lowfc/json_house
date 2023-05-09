@@ -13,6 +13,7 @@ class Room(Base):
     __tablename__ = 'room'
 
     id = Column(Integer, primary_key=True)
+    name = Column(String)
     uri_hash = Column(String, nullable=False, index=True)
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
     deleted_at = Column(DateTime)

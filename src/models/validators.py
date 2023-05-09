@@ -25,6 +25,7 @@ class BadResponse(Response):
 class CreateRoom(BaseModel):
     type_id: int
     content: str
+    name: str = ""
     headers: dict = {}
     require_parameters: dict = {}
     on_invalid_status_code: int = 200
@@ -65,6 +66,7 @@ class DeleteRoom(BaseModel):
 class ShowRoom(TunedModel):
     url: str
     id: int
+    name: str
     content: str
     headers: dict
     content_type: dict
@@ -72,6 +74,8 @@ class ShowRoom(TunedModel):
     on_invalid_status_code: int
     wait_microseconds: int
     created_at: datetime
+    deleted_at: datetime
+    deleted_at_unix: int
 
 
 class RoomResponse(Response):

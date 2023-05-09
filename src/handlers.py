@@ -2,7 +2,7 @@ import logging
 from datetime import datetime, timedelta
 
 from fastapi import APIRouter
-from sqlalchemy import select, exists, update, or_
+from sqlalchemy import select, exists, update, or_, func
 
 from db import async_session
 from utils import get_hash, Config
@@ -28,7 +28,7 @@ async def create_room(request: Request, body: CreateRoom) -> RoomResponse | BadR
     if not request.state.auth:
         logger.warning("Trying create room unauthorized", extra={"request_id": request.state.id})
         return BadResponse(
-            error_code=403,
+            error_code=401,
             message="Unauthorized"
         )
     uri = get_hash(user_agent)
@@ -53,16 +53,25 @@ async def create_room(request: Request, body: CreateRoom) -> RoomResponse | BadR
                     message="You have forbidden headers in your request",
                     data=None
                 )
+        if body.name == "":
+            session_rooms_count = select([func.count()]).select_from(Room).\
+                where(Room.session_id == request.state.session_id)
+            max_room_no = await session.execute(session_rooms_count)
+            max_room_no = max_room_no.scalar()
+            max_room_no += 1
+            body.name = f"Room #{max_room_no}"
+        deleted_at = (datetime.utcnow() + timedelta(seconds=conf_timing.get("room", 15000)))
         new_room = Room(
             content_type_id=ct.id,
             uri_hash=uri,
+            name=body.name,
             content=body.content,
             headers=body.headers,
             require_parameters=body.require_parameters,
             on_invalid_status_code=body.on_invalid_status_code,
             wait_microseconds=body.wait_microseconds,
             session_id=request.state.session_id,
-            deleted_at=(datetime.utcnow() + timedelta(seconds=conf_timing.get("room", 15000)))
+            deleted_at=deleted_at
         )
         session.add(new_room)
         await session.flush()
@@ -70,6 +79,7 @@ async def create_room(request: Request, body: CreateRoom) -> RoomResponse | BadR
         result = ShowRoom(
             url="/room/" + uri,
             id=new_room.id,
+            name=new_room.name,
             content=new_room.content,
             headers=new_room.headers,
             content_type={
@@ -80,7 +90,9 @@ async def create_room(request: Request, body: CreateRoom) -> RoomResponse | BadR
             require_parameters=new_room.require_parameters,
             on_invalid_status_code=new_room.on_invalid_status_code,
             wait_microseconds=new_room.wait_microseconds,
-            created_at=new_room.created_at  # TODO setup deleted at
+            created_at=new_room.created_at,
+            deleted_at=new_room.deleted_at,
+            deleted_at_unix=int(deleted_at.timestamp())
         )
         await session.commit()
         return RoomResponse(
@@ -93,7 +105,7 @@ async def delete_room(request: Request, body: DeleteRoom) -> Response | BadRespo
     if not request.state.auth:
         logger.warning("Trying delete room unauthorized", extra={"request_id": request.state.id})
         return BadResponse(
-            error_code=403,
+            error_code=401,
             message="Unauthorized"
         )
     async with async_session() as session:

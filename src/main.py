@@ -7,7 +7,6 @@ import uvicorn
 from fastapi import FastAPI, APIRouter
 
 from utils import Config
-from db import async_session
 from handlers import v1_router
 from rooms_handlers import room_router
 from middlewares import WrapRequestMiddleware
@@ -39,7 +38,7 @@ app.add_middleware(WrapRequestMiddleware)
 logger.info("Application started", extra={"request_id": None})
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="127.0.0.1", port=8090, headers=[
+    uvicorn.run(app, host="0.0.0.0", port=8000, headers=[
         ("X-Powered-By", "FastApi"),
         ("X-Python-Version", sys.version),
     ])

@@ -21,7 +21,7 @@ async def get_room_content(uri_hash: str, request: Request) -> Any | BadResponse
     if not request.state.auth:
         logger.warning("Trying get room content unauthorized", extra={"request_id": request.state.id})
         return BadResponse(
-            error_code=403,
+            error_code=401,
             message="Unauthorized"
         )
     start_processing = datetime.now()
